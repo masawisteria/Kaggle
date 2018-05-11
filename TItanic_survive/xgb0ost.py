@@ -18,22 +18,33 @@ from sklearn.cross_validation import StratifiedKFold
 from sklearn.cross_validation import cross_val_score
 import matplotlib.pyplot as plt
 import xgboost as xgb
+import csv as csv
 
 
 plt.style.use('ggplot')
 
 
-df = pd.read_csv("/Volumes/MASATAKA/Statistic/TeamProjectdocdata17/traintest2017.csv")
+df = pd.read_csv("/Users/Masataka/Documents/GitHub/Kaggle/TItanic_survive/train.csv")
 
 # training rabel
 Y_train = df.copy()
-Y_train['y'] = Y_train['y'].map({"yes":1, "no":0})
-Y_train = Y_train[Y_train['y'].notnull()]
-Y_train = Y_train.iloc[:, 14].values #  income のみ
+#Y_train['Survived'] = Y_train['Survived'].map({"yes":1, "no":0})
+Y_train = Y_train[Y_train['Survived'].notnull()]
+Y_train = Y_train.iloc[:, 1].values #  income のみ
+
+X_train = df.iloc[:, 2:12]#  apart y 
+
+#落とす
+colnames_drop = ['Name','Ticket','Cabin']
+X_train = X_train.drop(colnames_drop, axis=1)
+'''
+#欠損
+colnames_notnull = ['Age','Embarked']
+X_train = X_train[X_train[colnames_notnull].notnull()]
+'''
 
 # create dummy variables of categoly variables
-X_train = df.iloc[:, 0:14] #  apart y 
-colnames_categorical = ['workclass','education','marital-status','occupation','relationship','race','sex','native-country']
+colnames_categorical = ['Sex','Embarked']
 X_dummy = pd.get_dummies(X_train[colnames_categorical], drop_first=True)
 
 # conbination of dummies
@@ -72,8 +83,37 @@ print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 
 # 学習モデルの評価
 
-pred = clf.predict(X_train)
 
+
+pdd = pd.read_csv("/Users/Masataka/Documents/GitHub/Kaggle/TItanic_survive/test.csv")
+
+ids = pdd["PassengerId"].values
+
+# training rabel
+X_test = pdd.copy()
+
+
+X_test = pdd.iloc[:, 1:12]#  apart y 
+
+#落とす
+colnames_drop2 = ['Name','Ticket','Cabin']
+X_test = X_test.drop(colnames_drop2, axis=1)
+
+# create dummy variables of categoly variables
+colnames_categorical2 = ['Sex','Embarked']
+X_dummy1 = pd.get_dummies(X_test[colnames_categorical2], drop_first=True)
+
+# conbination of dummies
+X_test= pd.merge(X_test, X_dummy1, left_index=True, right_index=True)
+
+# 使わない、重複している列の削除
+X_test = X_test.drop(colnames_categorical2, axis=1)
+
+
+
+
+pred = clf.predict(X_test)
+'''
 report = classification_report(Y_train, pred)
 accuracy = accuracy_score(Y_train, pred)
 
@@ -96,3 +136,10 @@ plt.show()
 
 
 np.savetxt('/Volumes/MASATAKA/Statistic/TeamProjectdocdata17/xg.csv',probas_,delimiter=",")  
+'''
+# export result to be "titanic_submit.csv"
+submit_file = open("titanic_submit.csv", "w")
+file_object = csv.writer(submit_file)
+file_object.writerow(["PassengerId", "Survived"])
+file_object.writerows(zip(ids, pred))
+submit_file.close()
