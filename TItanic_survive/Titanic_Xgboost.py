@@ -19,6 +19,7 @@ from sklearn.cross_validation import cross_val_score
 import matplotlib.pyplot as plt
 import xgboost as xgb
 import csv as csv
+from sklearn.preprocessing import MinMaxScaler
 
 
 plt.style.use('ggplot')
@@ -52,6 +53,11 @@ X_train = pd.merge(X_train, X_dummy, left_index=True, right_index=True)
 
 # 使わない、重複している列の削除
 X_train = X_train.drop(colnames_categorical, axis=1)
+
+# Complement the missing values of "Age" column with average of "Age"
+median_age = X_train["Age"].dropna().median()
+if len(X_train.Age[X_train.Age.isnull()]) > 0:
+  X_train.loc[(X_train.Age.isnull()), "Age"] = median_age
 
 
 
@@ -109,6 +115,11 @@ X_test= pd.merge(X_test, X_dummy1, left_index=True, right_index=True)
 # 使わない、重複している列の削除
 X_test = X_test.drop(colnames_categorical2, axis=1)
 
+
+# Complement the missing values of "Age" column with average of "Age"
+median_age = X_test["Age"].dropna().median()
+if len(X_test.Age[X_test.Age.isnull()]) > 0:
+    X_test.loc[(X_test.Age.isnull()), "Age"] = median_age
 
 
 
